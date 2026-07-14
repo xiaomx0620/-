@@ -1,155 +1,200 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+# 日语视频自动字幕生成工具
 
-# C extensions
-*.so
+一句话介绍：选一个日语视频，自动生成带中文翻译的SRT字幕文件，还能提前告诉它人名和术语怎么翻。
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+## 这个工具是干什么的？
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+简单说就是：你给它一个日语视频，它还你一个带时间轴的中文字幕文件（.srt）。
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+整个过程全自动：
+1. 先用语音识别把视频里的日语对话转成文字
+2. 然后调用多个翻译引擎把日语翻成中文
+3. 最后生成一条一条带时间轴的字幕文件
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
+## 它跟别的字幕工具比有什么不一样？
 
-# Translations
-*.mo
-*.pot
+最大的特点：你可以提前告诉它人名和术语怎么翻。
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+比如你正在做《间谍过家家》的字幕，你可以在开始前告诉工具：
 
-# Flask stuff:
-instance/
-.webassets-cache
+ロイド・フォージャー -> 劳埃德·福杰（黄昏）
+ヨル・フォージャー -> 约尔·福杰（荆棘公主）
+アーニャ -> 阿尼亚
+西国 -> 西国
+おはよう -> 早安
 
-# Scrapy stuff:
-.scrapy
+然后工具在翻译时，会先在本地把这些词强制替换掉，再送去翻译引擎。不管是有道、百度还是SiliconFlow，都会收到已经替换好的文本，确保人名术语统一。
 
-# Sphinx documentation
-docs/_build/
+也就是说：术语替换是独立于翻译引擎的，所有引擎都受益。
 
-# PyBuilder
-.pybuilder/
-target/
+## 主要功能模块
 
-# Jupyter Notebooks
-.ipynb_checkpoints
+### 阶段一：语音识别
+- 默认使用 SenseVoiceSmall 云端模型（SiliconFlow 平台），支持日语
+- 也可以切换到 Whisper 本地模型（精度更高，但需要下载模型文件）
+- 支持主备切换：主引擎失败自动切备用
 
-# IPython
-profile_default/
-ipython_config.py
+### 阶段二：本地术语替换（核心特色）
+- 自动解析你填写的术语表（日文 -> 中文）
+- 逐句匹配，长词优先替换
+- 支持整句命中：如果整句话完全匹配术语表里的某条，直接使用预设译文，跳过翻译环节
+- 使用占位符技术，防止替换内容被翻译引擎二次改写
 
-# pyenv
-.python-version
+### 阶段三：多引擎翻译 + 智能择优
+- 同时调用多个翻译引擎：
+  - 有道智云（需申请密钥）
+  - 百度翻译（需申请密钥）
+  - DeepLX（需自建服务）
+  - SiliconFlow 大模型（需申请密钥）
+- 每个引擎的结果会通过质量评分 + 相似度比较智能选择最优译文
+- 逐句输出翻译进度和每个引擎的状态
 
-# pipenv
-Pipfile.lock
+### 阶段四：生成SRT字幕
+- 自动生成标准格式的 .srt 字幕文件
+- 保存在视频同目录下
 
-# poetry
-poetry.lock
+## 界面长什么样？
 
-# pdm
-.pdm.toml
+这是一个带图形界面的桌面工具，不是命令行程序。打开后你会看到：
 
-# PEP 582
-__pypackages__/
+- 一个大的日志窗口（显示处理进度）
+- 几个按钮：选择视频、停止、设置、部署环境、清空日志
+- 底部状态栏显示当前使用的语音引擎
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+操作方式就是点按钮，不需要敲命令。
 
-# SageMath parsed files
-*.sage.py
+## 安装与配置
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+### 环境要求
+- Windows 系统（理论上也支持 macOS/Linux，但未充分测试）
+- Python 3.9 或更高版本
+- 网络连接（首次使用需要下载依赖）
 
-# Spyder project settings
-.spyderproject
-.spyproject
+### 快速安装
+1. 下载本脚本，保存为 subtitle_tool.py
+2. 打开终端（命令提示符），进入脚本所在目录
+3. 运行 python subtitle_tool.py
+4. 点击界面上的 部署环境 按钮，自动安装所有依赖包
+5. 点击 设置，填写各翻译服务商的 API 密钥（至少填一个）
 
-# Rope project settings
-.ropeproject
+### 依赖包列表
+工具会自动安装以下 Python 包：
+- faster-whisper - Whisper 本地语音识别
+- pydub - 音频分割处理
+- av - 音视频读取
+- opencc-python-reimplemented - 繁体转简体
+- requests - HTTP 请求
+- tqdm - 进度条
 
-# mkdocs documentation
-/site
+如果自动安装失败，也可以手动执行：
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple faster-whisper pydub av opencc-python-reimplemented requests tqdm
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+## 获取 API 密钥
 
-# Pyre type checker
-.pyre/
+以下翻译服务至少需要申请一个：
 
-# pytype static type analyzer
-.pytype/
+| 服务 | 用途 | 申请地址 | 免费额度 |
+|------|------|----------|----------|
+| SiliconFlow | 语音识别 + 翻译（推荐） | https://siliconflow.cn/ | 注册送额度 |
+| 有道智云 | 翻译 | https://ai.youdao.com/ | 每月免费字符 |
+| 百度翻译 | 翻译 | https://fanyi-api.baidu.com/ | 每月免费字符 |
+| DeepLX | 翻译（需自建） | https://github.com/OwO-Network/DeepLX | 开源项目 |
 
-# Cython debug symbols
-cython_debug/
+建议先申请 SiliconFlow 的 API Key，因为它既提供语音识别也提供翻译，一个密钥搞定两个功能。
 
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+## 使用步骤
 
-# Local configuration for this project (contains API keys)
-config.json
+### 第一步：填写术语表
+点击 选择视频 后，工具会弹出一个窗口问你是否填写术语表。
 
-# Temporary audio files
-*.wav
-*.mp3
-*.m4a
-*.flac
-*.tmp
+术语表有四个区域：
+1. 作品名称 - 告诉工具你在做哪部动画
+2. 角色名对照表 - 日文 -> 中文，每行一个
+3. 特殊术语对照表 - 专有名词，每行一个
+4. 固定短句 - 固定说法和翻译偏好
+
+填写格式很简单，用 -> 或 -> 连接日文和中文：
+ロイド・フォージャー -> 劳埃德·福杰
+おはよう -> 早安
+
+不熟悉日语输入的话，可以直接复制粘贴。
+
+### 第二步：开始处理
+点击确定后，工具开始：
+1. 语音识别（把日语对话转成文字）
+2. 术语替换（按你填的表替换人名术语）
+3. 翻译成中文
+4. 生成 .srt 字幕文件
+
+整个过程在日志窗口里能看到实时进度。
+
+### 第三步：找到字幕文件
+处理完成后，字幕文件会保存在视频同一个文件夹里，文件名是 原视频名_字幕.srt。
+
+## 设置选项说明
+
+点击 设置 按钮，可以配置：
+
+### 翻译引擎
+- 有道、百度、DeepLX、SiliconFlow 翻译
+- 每个都可以单独启用/禁用
+- 填写对应的 API 密钥和模型名称
+
+### 语音引擎
+- 主引擎：选择 siliconflow_stt 或 whisper
+- SiliconFlow STT：可切换 SenseVoiceSmall 或 TeleSpeechASR
+- Whisper：可切换设备（cuda/cpu）和模型大小
+
+### 备用引擎
+- 开启后，主引擎失败会自动切换备用引擎
+
+## 停止处理
+
+处理过程中随时可以点击 停止 按钮。工具会安全中断当前环节，并生成已处理部分的字幕（文件名会带 _部分 标识）。
+
+## 输出文件示例
+
+生成的 .srt 文件内容长这样：
+1
+00:00:01,200 --> 00:00:03,500
+早安，今天天气真好。
+
+2
+00:00:04,000 --> 00:00:06,200
+劳埃德，任务已经完成了。
+
+你可以在任何支持字幕的视频播放器里加载这个文件（PotPlayer、VLC、MPC-HC 等）。
+
+## 常见问题
+
+Q：为什么有些句子没翻译？
+A：可能是翻译引擎返回了无效结果，工具会智能过滤。如果所有引擎都失败，会保留日文原文。
+
+Q：术语替换没生效？
+A：检查一下术语表的格式是否正确，必须是 日文 -> 中文，箭头两边不要有多余空格。
+
+Q：报错 Model does not exist？
+A：检查 SiliconFlow 设置里的模型名称是否正确，推荐使用 FunAudioLLM/SenseVoiceSmall。
+
+Q：提示找不到 ffmpeg？
+A：工具在处理音频时使用的是 WAV 格式，理论不需要 ffmpeg。如果出现警告可以忽略。
+
+Q：处理速度很慢？
+A：语音识别和翻译都需要联网调用 API，速度取决于网络和 API 响应。如果追求速度，可以只启用一个翻译引擎。
+
+## 文件结构
+
+项目目录/
+├── subtitle_tool.py      # 主程序
+├── config.json           # 配置文件（首次运行自动生成）
+└── 原视频_字幕.srt       # 输出字幕文件
+
+## 许可证
+
+本工具仅供学习和个人使用。使用各翻译服务商的 API 时，请遵守其各自的服务条款。
+
+## 致谢
+
+- faster-whisper - 高性能 Whisper 实现
+- SiliconFlow - 提供云端模型服务
+- OpenCC - 繁简转换

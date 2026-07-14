@@ -198,3 +198,5 @@ A：语音识别和翻译都需要联网调用 API，速度取决于网络和 AP
 - faster-whisper - 高性能 Whisper 实现
 - SiliconFlow - 提供云端模型服务
 - OpenCC - 繁简转换
+- 代码初始是https://github.com/SYSTRAN/faster-whisper
+- 代码都是由豆包和deepseek撰写

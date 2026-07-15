@@ -32,7 +32,8 @@
 
 ### 阶段一：语音识别
 - 默认使用 SenseVoiceSmall 云端模型（SiliconFlow 平台），支持日语
-- 也可以切换到 Whisper 本地模型（精度更高）
+- 也可以切换到 TeleAI/TeleSpeechASR 云端模型（日语识别更准确）
+- 支持 Whisper 本地识别（日语识别成熟稳定）
 - 支持主备切换
 
 ### 阶段二：本地术语替换（核心特色）
@@ -139,11 +140,38 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple faster-whisper pydub av 
 
 ### 语音引擎
 - 主引擎：选择 siliconflow_stt（云端）或 whisper（本地）
-- SiliconFlow STT：可切换 SenseVoiceSmall 或 TeleSpeechASR
+- SiliconFlow STT：可切换模型
+  - `FunAudioLLM/SenseVoiceSmall`（默认）
+  - `TeleAI/TeleSpeechASR`（日语识别更准确，推荐）
 - Whisper：可切换设备（cuda/cpu）和模型大小
 
 ### 备用引擎
 - 开启后，主引擎失败会自动切换备用引擎
+
+
+## ⚠️ 语音识别模型选择建议
+
+本工具默认使用 `FunAudioLLM/SenseVoiceSmall` 模型进行语音识别。如果你遇到以下情况：
+
+- 日语视频被识别成中文字符
+- 识别结果与视频内容不符
+- 识别准确率低
+
+请在 **设置 -> 语音引擎 -> 云端STT模型** 中更换为 `TeleAI/TeleSpeechASR`。
+
+| 模型名称 | 特点 |
+|----------|------|
+| `FunAudioLLM/SenseVoiceSmall` | 默认模型，多语言支持 |
+| `TeleAI/TeleSpeechASR` | **日语识别准确率更高，推荐使用** |
+| `Whisper (本地模式)` | 本地运行，日语识别成熟稳定 |
+
+**切换步骤：**
+1. 点击程序主界面的 **设置** 按钮
+2. 进入 **语音引擎** 标签页
+3. 在 **云端STT模型** 下拉菜单中选择 `TeleAI/TeleSpeechASR`
+4. 点击 **保存**，重新处理视频
+
+> 提示：语音识别和翻译是两个独立阶段，识别结果正确翻译才会正确。
 
 
 ## 停止处理
@@ -166,25 +194,41 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple faster-whisper pydub av 
 
 ## 常见问题
 
-Q：为什么有些句子没翻译？
+### Q：为什么翻译结果全是中文？日文原文识别不正确？
+
+A：这是语音识别阶段的问题，默认的 `SenseVoiceSmall` 模型可能将日语误识别为中文。
+
+**解决方法：**
+1. 在设置中将语音识别模型更换为 `TeleAI/TeleSpeechASR`
+2. 或者切换到 Whisper 本地识别（需要安装 faster-whisper）
+3. 更换后重新处理视频即可
+
+### Q：为什么有些句子没翻译？
+
 A：可能是翻译引擎返回了无效结果。如果所有引擎都失败，会保留日文原文。
 
-Q：术语替换没生效？
+### Q：术语替换没生效？
+
 A：检查术语表格式是否正确，必须是 日文 -> 中文。
 
-Q：报错 Model does not exist？
-A：检查 SiliconFlow 设置里的模型名称，推荐使用 FunAudioLLM/SenseVoiceSmall。
+### Q：报错 Model does not exist？
 
-Q：提示找不到 ffmpeg？
+A：检查 SiliconFlow 设置里的模型名称是否正确。
+
+### Q：提示找不到 ffmpeg？
+
 A：工具处理音频使用 WAV 格式，不需要 ffmpeg。警告可以忽略。
 
-Q：处理速度很慢？
+### Q：处理速度很慢？
+
 A：语音识别和翻译都需要联网调用 API，可以只启用一个翻译引擎来提速。
 
-Q：必须要有 GPU 吗？
+### Q：必须要有 GPU 吗？
+
 A：不需要。使用 SiliconFlow 云端识别时，普通电脑即可运行。
 
-Q：为什么需要联网？
+### Q：为什么需要联网？
+
 A：语音识别和翻译都调用云端 API，必须联网。
 
 
